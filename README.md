@@ -60,9 +60,83 @@ volumes:
 
 ### Environment variables
 
-| Variable              | Meaning                                                                                                                                                                                                                                          | Example            |
-|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------|
-| `APP_ROOT` (optional) | Allows you to deploy to another path than `/`.<br>See [Configuration examples for deploying on sub‐paths](https://github.com/axeleroy/self-host-planning-poker/wiki/Configuration-examples-for-deploying-on-sub%E2%80%90paths) for more details. | `APP_ROOT=/poker/` |
+| Variable                        | Meaning                                                                                                                                                                                                                                          | Example                                          |
+|---------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------|
+| `APP_ROOT` (optional)           | Allows you to deploy to another path than `/`.<br>See [Configuration examples for deploying on sub‐paths](https://github.com/axeleroy/self-host-planning-poker/wiki/Configuration-examples-for-deploying-on-sub%E2%80%90paths) for more details. | `APP_ROOT=/poker/`                               |
+| `DATABASE_URL` (optional)       | Full database connection URL. Supports SQLite, PostgreSQL, and MySQL                                                                                                                                                                               | `postgresql://user:pass@host:5432/db`           |
+| `DATABASE_TYPE` (optional)      | Database type: `sqlite` (default), `postgresql`, `mysql`                                                                                                                                                                                           | `postgresql`                                     |
+| `DATABASE_HOST` (optional)      | Database host for PostgreSQL/MySQL                                                                                                                                                                                                                 | `postgres.example.com`                          |
+| `DATABASE_PORT` (optional)      | Database port                                                                                                                                                                                                                                       | `5432` (PostgreSQL), `3306` (MySQL)             |
+| `DATABASE_NAME` (optional)      | Database name                                                                                                                                                                                                                                       | `planning_poker`                                 |
+| `DATABASE_USER` (optional)      | Database username                                                                                                                                                                                                                                   | `planning_poker_user`                           |
+| `DATABASE_PASSWORD` (optional)  | Database password                                                                                                                                                                                                                                   | `secure_password`                                |
+| `DATABASE_SSL_MODE` (optional)  | SSL mode for PostgreSQL: `require`, `prefer`, `disable`                                                                                                                                                                                            | `prefer`                                         |
+| `DATABASE_CHARSET` (optional)   | Character set for MySQL                                                                                                                                                                                                                             | `utf8mb4`                                        |
+| `DATABASE_PATH` (optional)      | Custom path for SQLite database                                                                                                                                                                                                                     | `/custom/path/database.db`                      |
+| `FLASK_DEBUG` (optional)        | Enable debug mode and CORS for development                                                                                                                                                                                                         | `true` or `false`                                |
+| `SECRET_KEY` (recommended)      | Flask secret key for production deployments                                                                                                                                                                                                        | `your-secret-key-here`                          |
+
+### External Database Support
+
+Planning Poker now supports external databases for production deployments, especially useful for Kubernetes environments. See [DATABASE_CONFIGURATION.md](DATABASE_CONFIGURATION.md) for detailed configuration instructions.
+
+#### Quick Examples
+
+**PostgreSQL:**
+```bash
+docker run \
+  -e DATABASE_URL="postgresql://user:password@postgres-host:5432/planning_poker" \
+  -p 8000:8000 \
+  axeleroy/self-host-planning-poker:latest
+```
+
+**MySQL:**
+```bash
+docker run \
+  -e DATABASE_URL="mysql://user:password@mysql-host:3306/planning_poker" \
+  -p 8000:8000 \
+  axeleroy/self-host-planning-poker:latest
+```
+
+**SQLite with custom path:**
+```bash
+docker run \
+  -e DATABASE_PATH="/data/custom.db" \
+  -v planning-poker-data:/data \
+  -p 8000:8000 \
+  axeleroy/self-host-planning-poker:latest
+```
+
+### Kubernetes Deployment
+
+Multiple Kubernetes deployment examples are provided:
+- `k8s-deployment-postgresql.yaml` - External PostgreSQL database
+- `k8s-deployment-mysql.yaml` - External MySQL database  
+- `k8s-deployment-database-url.yaml` - Simplified configuration with DATABASE_URL
+- `k8s-deployment-with-postgres.yaml` - Complete setup with included PostgreSQL
+
+```bash
+# Example deployment with external PostgreSQL
+kubectl apply -f k8s-deployment-postgresql.yaml
+```
+
+### Database Migration Tools
+
+Utility scripts are provided for database management:
+
+```bash
+# Check database configuration
+./check_database_config.py
+
+# Migrate from SQLite to external database
+./migrate_database.py migrate /path/to/old/database.db
+
+# Backup current database
+./migrate_database.py backup backup.json
+
+# Build and deploy (requires Docker and optionally kubectl)
+./build-and-deploy.sh --help
+```
 
 ### Running behind a reverse-proxy
 

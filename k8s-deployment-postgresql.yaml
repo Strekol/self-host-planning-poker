@@ -1,0 +1,171 @@
+# Kubernetes deployment configuration for Planning Poker
+# This example shows how to deploy with an external PostgreSQL database
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: planning-poker-config
+  namespace: default
+data:
+  DATABASE_TYPE: "postgresql"
+  DATABASE_HOST: "postgres-service"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "planning_poker"
+  DATABASE_USER: "planning_poker_user"
+  DATABASE_SSL_MODE: "prefer"
+  FLASK_DEBUG: "false"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: planning-poker-secrets
+  namespace: default
+type: Opaque
+stringData:
+  DATABASE_PASSWORD: "your-secure-password-here"
+  SECRET_KEY: "your-flask-secret-key-here"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: planning-poker
+  namespace: default
+  labels:
+    app: planning-poker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: planning-poker
+  template:
+    metadata:
+      labels:
+        app: planning-poker
+    spec:
+      containers:
+      - name: planning-poker
+        image: your-registry/planning-poker:latest
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DATABASE_TYPE
+          valueFrom:
+            configMapKeyRef:
+              name: planning-poker-config
+              key: DATABASE_TYPE
+        - name: DATABASE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: planning-poker-config
+              key: DATABASE_HOST
+        - name: DATABASE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: planning-poker-config
+              key: DATABASE_PORT
+        - name: DATABASE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: planning-poker-config
+              key: DATABASE_NAME
+        - name: DATABASE_USER
+          valueFrom:
+            configMapKeyRef:
+              name: planning-poker-config
+              key: DATABASE_USER
+        - name: DATABASE_SSL_MODE
+          valueFrom:
+            configMapKeyRef:
+              name: planning-poker-config
+              key: DATABASE_SSL_MODE
+        - name: FLASK_DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: planning-poker-config
+              key: FLASK_DEBUG
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: planning-poker-secrets
+              key: DATABASE_PASSWORD
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: planning-poker-secrets
+              key: SECRET_KEY
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - /app/healthcheck.py
+            - full
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - python
+            - /app/healthcheck.py
+            - app
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: planning-poker-service
+  namespace: default
+  labels:
+    app: planning-poker
+spec:
+  selector:
+    app: planning-poker
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: planning-poker-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - planning-poker.yourdomain.com
+    secretName: planning-poker-tls
+  rules:
+  - host: planning-poker.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: planning-poker-service
+            port:
+              number: 80
