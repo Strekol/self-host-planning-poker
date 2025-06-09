@@ -26,8 +26,6 @@ COPY --chown=1001:0 --from=node_builder /angular/dist/self-host-planning-poker .
 
 # Copy utility scripts
 COPY --chown=1001:0 healthcheck.py ./
-COPY --chown=1001:0 check_database_config.py ./
-COPY --chown=1001:0 migrate_database.py ./
 
 # Install Python dependencies
 RUN pip install --upgrade pip && \

@@ -106,38 +106,6 @@ docker run \
   -p 8000:8000 \
   axeleroy/self-host-planning-poker:latest
 ```
-
-### Kubernetes Deployment
-
-Multiple Kubernetes deployment examples are provided:
-- `k8s-deployment-postgresql.yaml` - External PostgreSQL database
-- `k8s-deployment-mysql.yaml` - External MySQL database  
-- `k8s-deployment-database-url.yaml` - Simplified configuration with DATABASE_URL
-- `k8s-deployment-with-postgres.yaml` - Complete setup with included PostgreSQL
-
-```bash
-# Example deployment with external PostgreSQL
-kubectl apply -f k8s-deployment-postgresql.yaml
-```
-
-### Database Migration Tools
-
-Utility scripts are provided for database management:
-
-```bash
-# Check database configuration
-./check_database_config.py
-
-# Migrate from SQLite to external database
-./migrate_database.py migrate /path/to/old/database.db
-
-# Backup current database
-./migrate_database.py backup backup.json
-
-# Build and deploy (requires Docker and optionally kubectl)
-./build-and-deploy.sh --help
-```
-
 ### Running behind a reverse-proxy
 
 Refer to [Socket.IO's documentation](https://socket.io/docs/v4/reverse-proxy/)  for setting up your reverse-proxy to work correctly with Socket.IO.
